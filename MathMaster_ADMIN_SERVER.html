@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathMaster Super Admin - Máy Chủ Quản Trị Tổng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- CỔNG XÁC THỰC SUPER ADMIN -->
+    <div id="super-login-gate" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-rose-600 text-white flex items-center justify-center text-2xl mx-auto shadow-lg">
+                    <i class="fa-solid fa-server"></i>
+                </div>
+                <h1 class="text-2xl font-black text-slate-900">MASTER SERVER</h1>
+                <p class="text-xs text-slate-500 font-medium">Hệ thống điều phối & cấp phép khách hàng (Super Admin)</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Master Key (Mặc định: superadmin999)</label>
+                    <input type="password" id="super-passcode" placeholder="Nhập Master Key..." onkeydown="if(event.key==='Enter') SuperAuth.login()" class="w-full px-4 py-3 bg-slate-50 border border-slate-300 focus:border-indigo-600 rounded-xl text-sm outline-none">
+                </div>
+                <button onclick="SuperAuth.login()" class="w-full py-3.5 bg-slate-900 hover:bg-indigo-600 text-white font-bold rounded-xl text-sm shadow-lg transition">
+                    <i class="fa-solid fa-key mr-2"></i> Kết Nối Máy Chủ Trung Tâm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GIAO DIỆN MÁY CHỦ SUPER ADMIN -->
+    <div id="super-workspace" class="hidden flex-grow flex flex-col bg-slate-100">
+        <header class="bg-slate-900 text-white px-6 py-4 shadow-md sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-rose-500 flex items-center justify-center text-white font-black text-lg">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </div>
+                    <div>
+                        <div class="font-extrabold text-lg tracking-tight">MathMaster Master Server</div>
+                        <div class="text-[11px] text-emerald-400 font-semibold flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Quản lý đa khách hàng (Multi-Tenant Hub)
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="SuperServer.loadAllTenants()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition">
+                        <i class="fa-solid fa-rotate mr-1"></i> Đồng bộ toàn mạng
+                    </button>
+                    <button onclick="SuperAuth.logout()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition">
+                        <i class="fa-solid fa-power-off mr-1"></i> Đăng xuất
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl w-full mx-auto p-6 space-y-6 flex-grow">
+            <!-- Thống kê toàn hệ thống -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-building"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-slate-500">Tổng Khách Hàng (Tenants)</div>
+                        <div id="srv-total-tenants" class="text-2xl font-black text-slate-800">0</div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-slate-500">Máy Con Đang Hoạt Động</div>
+                        <div id="srv-active-tenants" class="text-2xl font-black text-emerald-600">0</div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-slate-500">Tổng Học Sinh Toàn Mạng</div>
+                        <div id="srv-total-students" class="text-2xl font-black text-slate-800">0</div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-square-check"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-slate-500">Tổng Bài Giải Toàn Mạng</div>
+                        <div id="srv-total-solved" class="text-2xl font-black text-slate-800">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Cấp Mới Khách Hàng (Tạo Máy Con) -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-indigo-600"></i> Cấp Phát Không Gian Riêng Cho Khách Hàng Mới (Tạo Tenant)
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Mã Tenant ID (Viết liền)</label>
+                        <input type="text" id="new-tenant-id" placeholder="VD: trungtam_anpha" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold outline-none focus:border-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên Đơn Vị / Người Mua</label>
+                        <input type="text" id="new-tenant-name" placeholder="VD: Trung Tâm Toán Anpha" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Email Chủ Sở Hữu</label>
+                        <input type="email" id="new-tenant-email" placeholder="khachhang@gmail.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Mật Khẩu Trang Admin Con</label>
+                        <input type="text" id="new-tenant-pass" value="admin123" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono outline-none focus:border-indigo-600">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="SuperServer.createTenant()" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow transition h-[42px] flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-rocket"></i> Khởi Tạo Máy Con
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng Danh Sách Các Máy Con (Tenants) -->
+            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-extrabold text-slate-800 text-base">Danh Sách Các Máy Con Đã Cấp Phát</h3>
+                        <p class="text-xs text-slate-500">Mỗi khách hàng có URL trang Học sinh & Admin độc lập, dữ liệu tách biệt hoàn toàn</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold text-slate-500 uppercase">
+                                <th class="py-3.5 px-4">Tenant ID & Tên Khách</th>
+                                <th class="py-3.5 px-4">Trạng Thái</th>
+                                <th class="py-3.5 px-4">Thống Kê Con</th>
+                                <th class="py-3.5 px-4">Đường Dẫn Bàn Giao</th>
+                                <th class="py-3.5 px-4 text-right">Điều Khiển Máy Chủ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tenants-tbody" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getFirestore, doc, setDoc, getDoc, getDocs, collection, updateDoc, deleteDoc 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA9dxXmIbEd__0EjaI7kqFNlT18_gwrlA4",
+            authDomain: "mathmaster-app-64474.firebaseapp.com",
+            projectId: "mathmaster-app-64474",
+            storageBucket: "mathmaster-app-64474.firebasestorage.app",
+            messagingSenderId: "472731341311",
+            appId: "1:472731341311:web:8c7d9d615b9cd46f53d7ca",
+            measurementId: "G-N2ZB6TWW29"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Dữ liệu mẫu khởi tạo mặc định khi tạo máy con mới
+        const DefaultContentTemplate = {
+            theory: {
+                'g1_add_sub': { title: 'Cộng Trừ Cơ Bản (Phạm vi 20)', practiceTime: 30, hint: 'Dùng ngón tay hoặc đếm tiến/lùi.', def: 'Phép cộng gộp hai nhóm số lại với nhau.', tips: 'Dùng ngón tay đếm tiến/lùi.', ex: '5 + 4 = 9.' },
+                'g1_compare': { title: 'So Sánh Số (>, <, =)', practiceTime: 30, hint: 'So sánh chữ số ở hàng chục trước.', def: 'So sánh giá trị số tự nhiên.', tips: 'So sánh từ hàng cao tới thấp.', ex: '15 < 23.' }
+            },
+            exams: [
+                { id: 'ex_101', grade: 1, title: 'Đề Kiểm Tra Định Kỳ Lớp 1 - Chuyên Đề Phép Cộng Trừ', duration: 30, fileName: 'De_Kiem_Tra_Lop_1_AddSub.pdf', topicId: 'g1_add_sub' }
+            ]
+        };
+
+        window.SuperAuth = {
+            MASTER_KEY: 'superadmin999',
+            login() {
+                const key = document.getElementById('super-passcode').value.trim();
+                if (key === this.MASTER_KEY) {
+                    sessionStorage.setItem('mathmaster_super_unlocked', 'true');
+                    document.getElementById('super-login-gate').classList.add('hidden');
+                    document.getElementById('super-workspace').classList.remove('hidden');
+                    SuperServer.loadAllTenants();
+                } else {
+                    alert('❌ Sai Master Key!');
+                }
+            },
+            logout() {
+                sessionStorage.removeItem('mathmaster_super_unlocked');
+                location.reload();
+            },
+            init() {
+                if (sessionStorage.getItem('mathmaster_super_unlocked') === 'true') {
+                    document.getElementById('super-login-gate').classList.add('hidden');
+                    document.getElementById('super-workspace').classList.remove('hidden');
+                    SuperServer.loadAllTenants();
+                }
+            }
+        };
+
+        window.SuperServer = {
+            tenants: [],
+
+            async loadAllTenants() {
+                const tbody = document.getElementById('tenants-tbody');
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang quét dữ liệu các máy con...</td></tr>`;
+
+                try {
+                    const snap = await getDocs(collection(db, "tenants"));
+                    this.tenants = [];
+                    let totalStudents = 0;
+                    let totalSolvedAll = 0;
+                    let activeCount = 0;
+
+                    for (const d of snap.docs) {
+                        const info = { id: d.id, ...d.data() };
+                        if (info.status === 'active') activeCount++;
+
+                        // Đọc thống kê học sinh của từng tenant con
+                        const usersSnap = await getDocs(collection(db, "tenants", d.id, "users"));
+                        let tenantSolved = 0;
+                        usersSnap.forEach(u => {
+                            tenantSolved += (u.data().totalSolved || 0);
+                        });
+
+                        info.studentCount = usersSnap.size;
+                        info.solvedCount = tenantSolved;
+                        totalStudents += usersSnap.size;
+                        totalSolvedAll += tenantSolved;
+
+                        this.tenants.push(info);
+                    }
+
+                    document.getElementById('srv-total-tenants').innerText = this.tenants.length;
+                    document.getElementById('srv-active-tenants').innerText = activeCount;
+                    document.getElementById('srv-total-students').innerText = totalStudents;
+                    document.getElementById('srv-total-solved').innerText = totalSolvedAll;
+
+                    this.renderTable();
+                } catch (err) {
+                    alert("Lỗi tải danh sách máy con: " + err.message);
+                }
+            },
+
+            async createTenant() {
+                const rawId = document.getElementById('new-tenant-id').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+                const name = document.getElementById('new-tenant-name').value.trim();
+                const ownerEmail = document.getElementById('new-tenant-email').value.trim();
+                const adminPasscode = document.getElementById('new-tenant-pass').value.trim() || 'admin123';
+
+                if (!rawId || !name) return alert("Vui lòng nhập Mã Tenant ID và Tên đơn vị mua!");
+
+                const tenantRef = doc(db, "tenants", rawId);
+                const existing = await getDoc(tenantRef);
+                if (existing.exists()) return alert("Mã Tenant ID này đã tồn tại trên hệ thống!");
+
+                try {
+                    // 1. Tạo hồ sơ Tenant trên máy chủ
+                    await setDoc(tenantRef, {
+                        name,
+                        ownerEmail,
+                        adminPasscode,
+                        status: 'active',
+                        createdAt: new Date().toISOString()
+                    });
+
+                    // 2. Khởi tạo kho nội dung riêng cho Tenant này
+                    await setDoc(doc(db, "tenants", rawId, "content", "main"), {
+                        ...DefaultContentTemplate,
+                        brandTitle: name
+                    });
+
+                    document.getElementById('new-tenant-id').value = '';
+                    document.getElementById('new-tenant-name').value = '';
+                    document.getElementById('new-tenant-email').value = '';
+
+                    alert(`✅ Đã khởi tạo thành công máy con [${rawId}] cho khách hàng "${name}"!`);
+                    await this.loadAllTenants();
+                } catch (err) {
+                    alert("Lỗi khởi tạo máy con: " + err.message);
+                }
+            },
+
+            async toggleStatus(tenantId, currentStatus) {
+                const nextStatus = currentStatus === 'active' ? 'suspended' : 'active';
+                const confirmMsg = nextStatus === 'suspended'
+                    ? `Tạm khóa máy con [${tenantId}]? Khách hàng và học sinh của họ sẽ không thể truy cập cho tới khi mở lại.`
+                    : `Kích hoạt lại hoạt động cho máy con [${tenantId}]?`;
+
+                if (!confirm(confirmMsg)) return;
+
+                await updateDoc(doc(db, "tenants", tenantId), { status: nextStatus });
+                await this.loadAllTenants();
+            },
+
+            async pushTemplateToTenant(tenantId) {
+                if (!confirm(`Đẩy bộ dữ liệu lý thuyết & đề thi chuẩn từ Máy Chủ xuống máy con [${tenantId}]?`)) return;
+                await setDoc(doc(db, "tenants", tenantId, "content", "main"), DefaultContentTemplate, { merge: true });
+                alert(`✅ Đã cập nhật gói dữ liệu chuẩn xuống [${tenantId}]!`);
+            },
+
+            async deleteTenant(tenantId) {
+                if (!confirm(`CẢNH BÁO: Xóa cấu hình máy con [${tenantId}] khỏi máy chủ?`)) return;
+                await deleteDoc(doc(db, "tenants", tenantId));
+                await this.loadAllTenants();
+            },
+
+            copyLink(url) {
+                navigator.clipboard.writeText(url);
+                alert("📋 Đã sao chép đường dẫn: " + url);
+            },
+
+            renderTable() {
+                const tbody = document.getElementById('tenants-tbody');
+                if (this.tenants.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs">Chưa có khách hàng nào. Hãy tạo Tenant mới ở khung trên.</td></tr>`;
+                    return;
+                }
+
+                const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+
+                tbody.innerHTML = this.tenants.map(t => {
+                    const isActive = t.status === 'active';
+                    const userUrl = `${baseUrl}index.html?tenant=${t.id}`;
+                    const adminUrl = `${baseUrl}admin.html?tenant=${t.id}`;
+
+                    return `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="py-4 px-4">
+                                <div class="font-extrabold text-slate-900">${t.name}</div>
+                                <div class="text-xs font-mono text-indigo-600 font-bold">ID: ${t.id}</div>
+                                <div class="text-[11px] text-slate-400">${t.ownerEmail || 'Chưa gắn email'} • Pass Admin: <span class="font-mono text-slate-600">${t.adminPasscode}</span></div>
+                            </td>
+                            <td class="py-4 px-4">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold ${isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}">
+                                    ${isActive ? '● Đang hoạt động' : '■ Đang tạm khóa'}
+                                </span>
+                            </td>
+                            <td class="py-4 px-4 text-xs">
+                                <div class="font-bold text-slate-700"><i class="fa-solid fa-user-graduate text-indigo-500 mr-1"></i> ${t.studentCount} học sinh</div>
+                                <div class="text-slate-500"><i class="fa-solid fa-check text-emerald-500 mr-1"></i> ${t.solvedCount} bài đã giải</div>
+                            </td>
+                            <td class="py-4 px-4 space-y-1.5 text-xs">
+                                <div class="flex items-center gap-1.5">
+                                    <a href="${userUrl}" target="_blank" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg">Trang Học Sinh</a>
+                                    <button onclick="SuperServer.copyLink('${userUrl}')" class="p-1 text-slate-400 hover:text-slate-700" title="Copy link Học Sinh"><i class="fa-regular fa-copy"></i></button>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <a href="${adminUrl}" target="_blank" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-lg">Trang Admin Con</a>
+                                    <button onclick="SuperServer.copyLink('${adminUrl}')" class="p-1 text-slate-400 hover:text-slate-700" title="Copy link Admin Con"><i class="fa-regular fa-copy"></i></button>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4 text-right space-x-1">
+                                <button onclick="SuperServer.toggleStatus('${t.id}', '${t.status}')" class="px-2.5 py-1.5 ${isActive ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'} rounded-lg text-xs font-bold transition">
+                                    ${isActive ? 'Tạm khóa' : 'Mở khóa'}
+                                </button>
+                                <button onclick="SuperServer.pushTemplateToTenant('${t.id}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition" title="Cập nhật gói nội dung mẫu xuống máy con">
+                                    <i class="fa-solid fa-cloud-arrow-down"></i> Sync Mẫu
+                                </button>
+                                <button onclick="SuperServer.deleteTenant('${t.id}')" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => SuperAuth.init());
+    </script>
+</body>
+</html>
