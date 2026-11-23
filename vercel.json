@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/MathMaster_ADMIN_SERVER.html" }
+  ]
+}
